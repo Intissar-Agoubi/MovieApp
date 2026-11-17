@@ -5,7 +5,7 @@ import es.dam.movieapp.R
 import es.dam.movieapp.core.cache.AppCache
 import es.dam.movieapp.core.serialization.JsonSerializer
 import es.dam.movieapp.features.movies.domain.Movie
-import androidx.core.content.edit
+
 
 class MovieXmlLocalDataSource(
     private val context: Context,
@@ -24,6 +24,36 @@ class MovieXmlLocalDataSource(
     fun saveAll(movies: List<Movie>) {
         sharedPreferences.edit().apply { putString(keyMovies, serializer.toJson(movies)).apply() }
         appCache.updateTime(keyMovies)
+    }
+
+    // recuperar un listado de movies
+    fun findAll(): List<Movie> {
+        if (appCache.isExpired(keyMovies, ttl)) return emptyList()
+        val json = sharedPreferences.getString(keyMovies, null) ?: return emptyList()
+        return serializer.fromJson(json)
+    }
+
+    // recuperar by id
+    fun findById(id: String): Movie? {
+        return findAll().find { it.id == id }
+    }
+    // delete by id
+    fun deleteById(id : String){
+        saveAll(findAll().filterNot { it.id == id })
+    }
+    // modificar un listado
+    fun update(movie: Movie){
+       val pelicula = findAll().filterNot { it.id == movie.id }.toMutableList()
+          pelicula.add(movie)
+        saveAll(pelicula)
+
+    }
+
+
+
+    // deleteall eliminar todo
+    fun deleteAll(){
+        sharedPreferences.edit().remove(keyMovies).apply()
     }
 
 }
